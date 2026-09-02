@@ -23,7 +23,7 @@ public record ProductoRequest(
                 description = "Categoría del producto",
                 example = "Electrónica"
         )
-        @NotNull(message = "La categoría es requerida")
+        @NotBlank(message = "La categoría es requerida")
         String categoria,
 
         @Schema(
