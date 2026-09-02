@@ -4,7 +4,6 @@ import com.christian.almacen.dto.productos.ProductoRequest;
 import com.christian.almacen.dto.productos.ProductoResponse;
 import com.christian.almacen.services.productos.ProductoService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
@@ -20,7 +19,6 @@ import java.util.List;
 @RequestMapping("/api/productos")
 @AllArgsConstructor
 @Validated
-@Tag(name = "Productos", description = "Endpoints para la gestión de productos")
 public class ProductoController {
 
     private final ProductoService productoService;
