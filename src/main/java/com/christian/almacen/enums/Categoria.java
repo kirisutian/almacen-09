@@ -1,5 +1,6 @@
 package com.christian.almacen.enums;
 
+import com.christian.almacen.exceptions.DatoInvalidoException;
 import com.christian.almacen.exceptions.RecursoNoEncontradoException;
 import com.christian.almacen.utils.StringCustomUtils;
 import lombok.Getter;
@@ -30,6 +31,6 @@ public enum Categoria {
                 return categoria;
         }
 
-        throw new RecursoNoEncontradoException("No existe una categoría con la descripción: " + descripcion);
+        throw new DatoInvalidoException("No existe una categoría con la descripción: " + descripcion);
     }
 }

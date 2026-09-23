@@ -1,0 +1,26 @@
+services:
+  # Nombre del servicio dentro de Docker Compose.
+  # Puedes utilizar este nombre para referirte al servicio desde otros servicios de Docker Compose.
+  almacen-app:
+    # Nombre de la imagen Docker que se utilizará. ":latest" es la etiqueta de la imagen.
+    image: almacen-app:latest
+    # Indica que la imagen debe construirse utilizando el Dockerfile que se encuentra en el directorio actual.
+    build: .
+    # Nombre personalizado que tendrá el contenedor. Por eso podrás verlo como "almacen-app" con: docker ps
+    container_name: almacen-app
+    # Variables de entorno que estarán disponibles dentro de la aplicación.
+    environment:
+      # PORT toma su valor desde el archivo .env y lo pasa al contenedor.
+      PORT: ${PORT}
+      # DB_URL_DOCKER contiene la URL que debe utilizar la aplicación para conectarse a la base de datos desde Docker.
+      DB_URL: ${DB_URL_DOCKER}
+      # Usuario de la base de datos.
+      DB_USER: ${DB_USER}
+      # Contraseña de la base de datos.
+      DB_PASS: ${DB_PASS}
+    # Mapeo de puertos:
+    # ${PORT} antes de los dos puntos: puerto de tu máquina (host)
+    # ${PORT} después de los dos puntos: puerto dentro del contenedor
+    # P.E: localhost:8080 -> contenedor:8080
+    ports:
+      - "${PORT}:${PORT}"

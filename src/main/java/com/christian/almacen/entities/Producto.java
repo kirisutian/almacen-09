@@ -1,6 +1,7 @@
 package com.christian.almacen.entities;
 
 import com.christian.almacen.enums.Categoria;
+import com.christian.almacen.exceptions.DatoInvalidoException;
 import com.christian.almacen.utils.StringCustomUtils;
 import com.christian.almacen.utils.ValoresNumericosUtils;
 import jakarta.persistence.*;
@@ -48,7 +49,7 @@ public class Producto {
                 cantidad,"La cantidad debe ser positiva");
 
         if (cantidad > this.cantidad)
-            throw new IllegalArgumentException(
+            throw new DatoInvalidoException(
                     "La cantidad debe ser menor o igual a la cantidad actual");
 
         this.cantidad -= cantidad;
@@ -61,7 +62,7 @@ public class Producto {
                 "El nombre es requerido y debe tener entre 5 y 30 caracteres");
 
         if (categoria == null)
-            throw new IllegalArgumentException("La categoría es requerida");
+            throw new DatoInvalidoException("La categoría es requerida");
 
         ValoresNumericosUtils.validarBigDecimalPositivo(precio,
                 "El precio es requerido y debe ser positivo");

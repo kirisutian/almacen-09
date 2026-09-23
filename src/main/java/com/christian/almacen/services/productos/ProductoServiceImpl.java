@@ -86,6 +86,7 @@ public class ProductoServiceImpl implements ProductoService {
         log.info("Eliminando producto con id: {}", id);
 
         productoRepository.delete(producto);
+        productoRepository.flush();
 
         log.info("Producto con id {} eliminado", id);
     }
