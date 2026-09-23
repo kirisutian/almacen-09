@@ -1,12 +1,14 @@
 package com.christian.almacen.utils;
 
+import com.christian.almacen.exceptions.DatoInvalidoException;
+
 import java.math.BigDecimal;
 
 public class ValoresNumericosUtils {
 
     public static <N extends Number> void validarNumeroRequerido(N numero) {
         if (numero == null)
-            throw new IllegalArgumentException("El valor numérico es requerido");
+            throw new DatoInvalidoException("El valor numérico es requerido");
     }
 
     public static void validarEnteroPositivo(Integer entero, String mensaje) {
@@ -14,7 +16,7 @@ public class ValoresNumericosUtils {
         validarNumeroRequerido(entero);
 
         if (entero < 0)
-            throw new IllegalArgumentException(mensaje);
+            throw new DatoInvalidoException(mensaje);
     }
 
     public static void validarBigDecimalPositivo(BigDecimal numero, String mensaje) {
@@ -22,6 +24,6 @@ public class ValoresNumericosUtils {
         validarNumeroRequerido(numero);
 
         if (numero.compareTo(BigDecimal.ZERO) < 0)
-            throw new IllegalArgumentException(mensaje);
+            throw new DatoInvalidoException(mensaje);
     }
 }

@@ -1,10 +1,12 @@
 package com.christian.almacen.utils;
 
+import com.christian.almacen.exceptions.DatoInvalidoException;
+
 public class StringCustomUtils {
 
     public static void validarNoVacio(String texto, String mensaje) {
         if (texto == null || texto.isBlank())
-            throw new IllegalArgumentException(mensaje);
+            throw new DatoInvalidoException(mensaje);
     }
 
     public static void validarTamanio(String texto, Integer min, Integer max, String mensaje) {
@@ -12,7 +14,7 @@ public class StringCustomUtils {
         validarNoVacio(texto, mensaje);
 
         if (texto.length() < min || texto.length() > max)
-            throw new IllegalArgumentException(mensaje);
+            throw new DatoInvalidoException(mensaje);
     }
 
     public static String quitarAcentos(String texto) {

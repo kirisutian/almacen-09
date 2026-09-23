@@ -3,6 +3,7 @@ package com.christian.almacen.services.sucursales;
 import com.christian.almacen.dto.sucursales.SucursalRequest;
 import com.christian.almacen.dto.sucursales.SucursalResponse;
 import com.christian.almacen.entities.Sucursal;
+import com.christian.almacen.exceptions.ConflictoException;
 import com.christian.almacen.exceptions.RecursoNoEncontradoException;
 import com.christian.almacen.mappers.SucursalMapper;
 import com.christian.almacen.repositories.SucursalRepository;
@@ -97,7 +98,7 @@ public class SucursalServiceImpl implements SucursalService {
         log.info("Validando nombre único...");
 
         if (sucursalRepository.existsByNombreIgnoreCase(request.nombre().trim()))
-            throw new IllegalArgumentException(
+            throw new ConflictoException(
                     "Ya existe una sucursal con el nombre de: " + request.nombre());
     }
 
@@ -106,7 +107,7 @@ public class SucursalServiceImpl implements SucursalService {
         log.info("Validando cambio en nombre único...");
 
         if (sucursalRepository.existsByNombreIgnoreCaseAndIdNot(request.nombre().trim(), id))
-            throw new IllegalArgumentException(
+            throw new ConflictoException(
                     "Ya existe una sucursal con el nombre de: " + request.nombre());
     }
 }

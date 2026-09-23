@@ -1,82 +1,96 @@
 package com.christian.almacen.exceptions;
 
-import com.christian.almacen.dto.CustomErrorResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.context.MessageSourceResolvable;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.servlet.resource.NoResourceFoundException;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
-import java.util.NoSuchElementException;
+import java.util.List;
 
 @RestControllerAdvice
 @Slf4j
-public class GlobalExceptionHandler {
+public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
-    @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<CustomErrorResponse> handleConstraintViolationException(ConstraintViolationException e) {
-        log.error("Violación de restricción: {}", e.getMessage());
-        return ResponseEntity.badRequest()
-                .body(new CustomErrorResponse(HttpStatus.BAD_REQUEST.value(),
-                        "Violación de restricción: " + e.getMessage()));
-    }
+    // ---------- Nuestras excepciones ----------
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<CustomErrorResponse> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
-        String mensaje = e.getBindingResult().getFieldErrors().stream()
-                .map(err -> err.getField() + ": " + err.getDefaultMessage())
-                .findFirst()
-                .orElse("Error de validación en los datos enviados");
-        log.error("Error de validación de argumentos: {}", mensaje);
-        return ResponseEntity.badRequest()
-                .body(new CustomErrorResponse(HttpStatus.BAD_REQUEST.value(), mensaje));
-    }
-
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<CustomErrorResponse> handleIllegalArgumentException(IllegalArgumentException e) {
-        log.error("Error en la petición: {}", e.getMessage());
-        return ResponseEntity.badRequest().body(
-                new CustomErrorResponse(HttpStatus.BAD_REQUEST.value(), e.getMessage())
-        );
-    }
-
-    @ExceptionHandler(IllegalStateException.class)
-    public ResponseEntity<CustomErrorResponse> handleIllegalStateException(IllegalStateException e) {
-        log.error("Error en el estado de la petición: {}", e.getMessage());
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(
-                new CustomErrorResponse(HttpStatus.CONFLICT.value(), e.getMessage())
-        );
-    }
-
-    @ExceptionHandler(NoSuchElementException.class)
-    public ResponseEntity<CustomErrorResponse> handleNoSuchElementException(NoSuchElementException e) {
-        log.warn("No se encontró recurso: {}", e.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(new CustomErrorResponse(HttpStatus.NOT_FOUND.value(), e.getMessage()));
-    }
-
-    @ExceptionHandler(NoResourceFoundException.class)
-    public ResponseEntity<CustomErrorResponse> handleNoResourceFoundException(NoResourceFoundException e) {
-        log.warn("No se encontró recurso estático: {}", e.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(new CustomErrorResponse(HttpStatus.NOT_FOUND.value(), e.getMessage()));
-    }
-
+    // 404: el recurso no existe
     @ExceptionHandler(RecursoNoEncontradoException.class)
-    public ResponseEntity<CustomErrorResponse> handleRecursoNoEncontradoException(RecursoNoEncontradoException e) {
-        log.warn("No se encontró el recurso: {}", e.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(new CustomErrorResponse(HttpStatus.NOT_FOUND.value(), e.getMessage()));
+    public ProblemDetail handleNoEncontrado(RecursoNoEncontradoException e) {
+        log.warn("No encontrado: {}", e.getMessage());
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, e.getMessage());
     }
 
+    // 400: el cliente mandó un dato inválido
+    @ExceptionHandler(DatoInvalidoException.class)
+    public ProblemDetail handleDatoInvalido(DatoInvalidoException e) {
+        log.warn("Dato inválido: {}", e.getMessage());
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+
+    // 409: regla de negocio violada (duplicado, etc.)
+    @ExceptionHandler(ConflictoException.class)
+    public ProblemDetail handleConflicto(ConflictoException e) {
+        log.warn("Conflicto: {}", e.getMessage());
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, e.getMessage());
+    }
+
+    // 409: la base de datos rechazó el dato (unique, foreign key...)
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ProblemDetail handleIntegridad(DataIntegrityViolationException e) {
+        log.warn("Integridad de datos: {}", e.getMostSpecificCause().getMessage());
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+                "La operación viola una restricción de datos (duplicado o registro en uso).");
+    }
+
+    // ---------- Validaciones (sobrescriben a la clase base) ----------
+
+    // 400: falló @Valid en el @RequestBody
+    @Override
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(
+            MethodArgumentNotValidException e, HttpHeaders headers,
+            HttpStatusCode status, WebRequest request) {
+
+        List<String> errores = e.getBindingResult().getFieldErrors().stream()
+                .map(err -> err.getField() + ": " + err.getDefaultMessage())
+                .toList();
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST, "Los datos enviados no son válidos.");
+        pd.setProperty("errores", errores);
+        return handleExceptionInternal(e, pd, headers, status, request);
+    }
+
+    // 400: falló @Positive, @Min... en un @PathVariable o @RequestParam
+    @Override
+    protected ResponseEntity<Object> handleHandlerMethodValidationException(
+            HandlerMethodValidationException e, HttpHeaders headers,
+            HttpStatusCode status, WebRequest request) {
+
+        List<String> errores = e.getAllErrors().stream()
+                .map(MessageSourceResolvable::getDefaultMessage)
+                .toList();
+        ProblemDetail pd = ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST, "Uno o más parámetros no son válidos.");
+        pd.setProperty("errores", errores);
+        return handleExceptionInternal(e, pd, headers, status, request);
+    }
+
+    // ---------- Red de seguridad ----------
+
+    // 500: cualquier error que no previmos
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<CustomErrorResponse> handleGeneralException(Exception e) {
-        log.error("Error interno del servidor: {}", e.getMessage(), e);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new CustomErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                        "Error interno del servidor. Por favor, contacte al administrador."));
+    public ProblemDetail handleGeneral(Exception e) {
+        log.error("Error interno", e);
+        return ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR,
+                "Error interno del servidor. Contacte al administrador.");
     }
 }
