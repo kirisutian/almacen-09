@@ -168,9 +168,7 @@ class ProductoServiceImplTest {
         assertThat(resultado.nombre()).isEqualTo("Laptop Pro Max");
         assertThat(producto.getCantidad()).isEqualTo(15);
 
-        // El comentario en el código dice "NO NECESARIO POR DIRTY CHECKING":
-        // por eso verificamos que NUNCA se llame a save() explícitamente.
-        verify(productoRepository, never()).save(any());
+        verify(productoRepository).saveAndFlush(producto);
     }
 
     @Test

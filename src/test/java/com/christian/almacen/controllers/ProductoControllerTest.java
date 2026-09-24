@@ -80,7 +80,7 @@ class ProductoControllerTest {
         // Act + Assert
         mockMvc.perform(get("/api/productos/{id}", 99L))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.detail").exists());
+                .andExpect(jsonPath("$.detail").value("Producto no encontrado con id: 99"));
     }
 
     @Test

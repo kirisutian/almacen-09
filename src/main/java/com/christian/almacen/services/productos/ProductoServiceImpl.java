@@ -72,7 +72,7 @@ public class ProductoServiceImpl implements ProductoService {
                 request.precio(),
                 request.cantidad());
 
-        //productoRepository.save(producto); NO NECESARIO POR DIRTY CHECKING
+        productoRepository.saveAndFlush(producto);
         log.info("Producto con id {} actualizado", id);
 
         return productoMapper.entidadAResponse(producto);
